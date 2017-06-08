@@ -12,9 +12,9 @@ picture: assets/images/profile.jpg
 
 # If you want to include your resume, set to true
 # and specify source (external or local).
-resume: true
-resume-external: true
-resume-url: assets/resume/Resume
+resume: assets/resume/Resume
+resume-external: false
+
 
 url: https://van950105.github.io
 # your url: http://USERNAME.github.io
@@ -34,15 +34,15 @@ disqus:
   categories: [blog, project] # only show disqus for posts that have these categories
 
 # if you don't have any of social below, comment the line
-facebook: myfacebook
-twitter: mytwitter
+facebook: zhou.muchen
+#ter: mytwitter
 # google: mygoogle
-# instagram: myinstagram
+instagram: ryan_nb
 # pinterest: mypinterest
-# linkedin: mylinkedin
+linkedin: muchenz
 # youtube: myyoutube
 # spotify: myspotify
-github: mygithub
+github: van950105
 # lastfm: mylastfm
 # stackoverflow: 7044681/mystackoverflow
 # quora: userquora
