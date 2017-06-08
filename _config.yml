@@ -17,7 +17,7 @@ resume-external: true
 resume-url: van950105.github.io/assets/resume/Resume.pdf
 
 
-url: https://van950105.github.io
+url: https://muchenz.com
 # your url: http://USERNAME.github.io
 
 permalink: /:title/
@@ -35,13 +35,13 @@ disqus:
   categories: [blog, project] # only show disqus for posts that have these categories
 
 # if you don't have any of social below, comment the line
-facebook: zhou.muchen
+#facebook: zhou.muchen
 #ter: mytwitter
 # google: mygoogle
 instagram: ryan_nb
 # pinterest: mypinterest
 linkedin: muchenz
-# youtube: myyoutube
+youtube: ryan.gm.nb
 # spotify: myspotify
 github: van950105
 # lastfm: mylastfm
