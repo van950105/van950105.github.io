@@ -37,3 +37,8 @@ Outside the school, I like to do film photography and play Overwatch.
 	<li><a href="van950105.github.io/assets/works/Group5_FinalProject.pdf ">Major League Soccer Reschedule</a></li>
 	<li><a href="https://youtu.be/9HAHiikM3z4">Calculus Helper (Early Version)</a></li>	
 </ul>
+
+<h2>Sample Analysis Work</h2>
+<ul>
+	<li><a href="van950105.github.io/assets/works/final.pdf">Productivity Analysis</a><a href="van950105.github.io/assets/works/final.Rmd"> .Rmd</a> </li>
+</ul>
