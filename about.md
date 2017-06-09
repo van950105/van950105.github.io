@@ -32,7 +32,7 @@ Outside the school, I like to do film photography and play Overwatch.
 <h2>Projects</h2>
 
 <ul>
-	<li><a href="https://github.com/ricsonc/sarcasm_machine">Sarcasm Machine</a></li>
+	<li><a href="https://github.com/ricsonc/sarcasm_machine">Sarcasm Machine</a>  <a href="https://github.com/ricsoncheng/sarcasm_machine/blob/master/writeup.pdf">(Paper)</a></li>
 	<li><a href="https://youtu.be/xTR0UbwScgg">Question and Answer Machine</a></li>
 	<li><a href="https://van950105.github.io/assets/works/Group5_FinalProject.pdf">Major League Soccer Reschedule</a></li>
 	<li><a href="https://youtu.be/9HAHiikM3z4">Calculus Helper (Early Version)</a></li>	
@@ -40,5 +40,5 @@ Outside the school, I like to do film photography and play Overwatch.
 
 <h2>Sample Analysis Work</h2>
 <ul>
-	<li><a href="van950105.github.io/assets/works/final.pdf">Productivity Analysis</a><a href="van950105.github.io/assets/works/final.Rmd"> .Rmd</a> </li>
+	<li><a href="van950105.github.io/assets/works/final.pdf">Productivity Analysis  </a><a href="van950105.github.io/assets/works/final.Rmd">(.Rmd)</a> </li>
 </ul>
