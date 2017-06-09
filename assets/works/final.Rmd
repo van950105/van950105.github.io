@@ -1,0 +1,324 @@
+---
+title: "Final Data Analysis"
+author: "Ryan Zhou"
+date: "May 8, 2016"
+output: pdf_document
+---
+```{R,echo=F,warning=F,message=F}
+library("mgcv")
+library("np")
+gdp<-read.csv("macro.csv")
+gdp<-na.omit(gdp)
+gdp.bf2005<-gdp[1:232,]
+gdp.af2005<-gdp[233:275,]
+cv.lm <- function(data, formulae, nfolds = 5) {
+   data <- na.omit(data)
+   formulae <- sapply(formulae, as.formula)
+   responses <- sapply(formulae, response.name)
+   names(responses) <- as.character(formulae)
+   n <- nrow(data)
+   fold.labels <- sample(rep(1:nfolds, length.out = n))
+   mses <- matrix(NA, nrow = nfolds, ncol = length(formulae))
+   colnames <- as.character(formulae)
+   for (fold in 1:nfolds) {
+       test.rows <- which(fold.labels == fold)
+       train <- data[-test.rows, ]
+       test <- data[test.rows, ]
+       for (form in 1:length(formulae)) {
+           current.model <- lm(formula = formulae[[form]], data = train)
+           predictions <- predict(current.model, newdata = test)
+           test.responses <- test[, responses[form]]
+           test.errors <- test.responses - predictions
+           mses[fold, form] <- mean(test.errors^2)
+       }
+   }
+   return(colMeans(mses))
+}
+response.name <- function(formula) {
+   var.names <- all.vars(formula)
+   return(var.names[1])
+}
+
+
+  design.matrix.from.ts <- function(ts, order, right.older = TRUE) {
+n <- length(ts)
+x <- ts[(order + 1):n]
+for (lag in 1:order) {
+if (right.older) {
+x <- cbind(x, ts[(order + 1 - lag):(n - lag)])
+}
+else {
+x <- cbind(ts[(order + 1 - lag):(n - lag)], x)
+}
+}
+lag.names <- c("lag0", paste("lag", 1:order, sep = ""))
+if (right.older) {
+colnames(x) <- lag.names
+}
+else {
+colnames(x) <- rev(lag.names)
+}
+return(as.data.frame(x))
+  }
+  aar <- function(ts, order) {
+stopifnot(require(mgcv))
+fit <- gam(as.formula(auto.formula(order)), data = design.matrix.from.ts(ts,
+order))
+return(fit)
+}
+auto.formula <- function(order) {
+inputs <- paste("s(lag", 1:order, ")", sep = "", collapse = "+")
+form <- paste("lag0 ~ ", inputs)
+return(form)
+}
+```
+
+
+##1.Introduction
+"Real business cycle" is an important and fundamental theory in modern economics. It measures how the econmy reacts to the real change in society, which can be monetary, fiscal or other social causes. In this data analysis, we ar eparticularly interested in people's productivity. The theory believes that productivity is an exogenous varible, and all the fluctuations are driven by it. We will be using de-trended data to examine if such theory holds. 
+
+##2.Specific Problems and Models
+
+###2.1
+First of all, we are asked to build a regression model for GDP at time $t$ as a function of other variale at time $t$. The predicting variable we will be using are consumption, investment, hours worked and productivity. Through the series courses, we have covered a few different regression models and methods and we will fit the data to each model an see how well the model is doing. And here, we will be using linear model, general additive model and kernel model.
+
+```{R,echo=F,cache=T,message=F,results='hide'}
+init.model.lm<-lm(GDP~Consumption+Investment+Hours+Productivity,data=gdp.bf2005)
+init.model.gam<-gam((GDP)~s(Consumption)+s(Investment)+s(Hours)+s(Productivity),data=gdp.bf2005)
+init.bw<-npregbw(formula=GDP~Consumption+Investment+Hours+Productivity,tol=1e-3,ftol=1e-3,data=gdp.bf2005,residuals=T,verbose=F)
+init.model.kernel<-npreg(bws=init.bw,residuals=T)
+mse<-function(model) { mean(residuals(model)^2) }
+lm.cv<-cv.lm(data=gdp.bf2005,formula=c(formula(init.model.lm)),nfolds=5)
+
+```
+There are two ways for us to calculate the uncertainty of a model, in-sample MSE and cross-validated MSE. First let's calculate the in-sample MSE.Linear model gives MSE of $`r signif(mse(init.model.lm),digits = 3)`$, general additive model gives MSE of $`r signif(mse(init.model.gam),digits = 3)`$ while kernel regression model gives MSE of $`r signif(init.model.kernel$MSE,digits = 3)`$. Then, we will check the cv MSE for each model. Linear model gives MSE of $`r signif(lm.cv,digits = 3)`$, general additive model gives MSE of $`r signif(init.model.gam$gcv.ubre,digits = 3)`$ while kernel regression model gives MSE of $`r signif(init.bw$fval,digits = 3)`$. We can see clearly kernel regression give us better in-sample MSE and cross-validated MSE. Thus, for the first part of the question, we will be using kernel regression. We will also visualize it.
+
+```{R,echo=F}
+par(mfrow=c(2,2))
+plot(gdp.bf2005$GDP~gdp.bf2005$X,xlab="time",ylab="gdp",main="linear model")
+lines(gdp.bf2005$X,predict(init.model.lm),col='red',lwd=2)
+plot(gdp.bf2005$GDP~gdp.bf2005$X,xlab="time",ylab="gdp",main="GAM model")
+lines(gdp.bf2005$X,predict(init.model.gam),col='red',lwd=2)
+plot(gdp.bf2005$GDP~gdp.bf2005$X,xlab="time",ylab="gdp",main="kernel model")
+lines(gdp.bf2005$X,predict(init.model.kernel),col='red',lwd=2)
+par(mfrow=c(1,1))
+
+```
+
+From the kernel model, we can see that investment has the widest bandwidth among the predictive variable, which implies that investment are one of the least important varible to consider for GDP and productivity has the smallest bandwidth, which means it might be more important to consider for GDP.  
+
+Then, we will try to use this model to predict the data post 2005. The way we measure the performance is by measuring the in-sample MSE by fitting the post 2005 data to our model. 
+```{R,echo=F}
+init.predction<-predict(init.model.kernel,newdata=gdp.af2005)
+init.pred.mse<-mean((init.predction-gdp.af2005$GDP)^2)
+```
+
+As we can see, the prediction's in-sample mse is $`r signif(init.pred.mse,digits=3)`$, which is much larger the in-sample mse for the training data. Let's also visualize this on graph. As we can see from the graph, it has pretty poor performance of predicting the data especially after 2010.
+
+```{R,echo=F}
+gdp.af2005$X<-factor(gdp.af2005$X)
+plot(gdp.af2005$GDP~gdp.af2005$X,xlab="time",ylab="gdp",main="Prediction Performance")
+lines(gdp.af2005$X,init.predction,col='red',lwd=2)
+```
+
+
+Such performance implies that using kernel regrssion results in extremely good performance to re-predict the data for knowing knowledge(repredicting the past) but pretty bad preformance to predict the unknown knowledge(actual prediction towards the future).
+
+
+###2.2
+```{R,echo=F,cache=T,message=F,results='hide'}
+ts.gdp<-gdp[1:274,]
+ts.gdp$X<-factor(gdp$X[1:274])
+ts.gdp$newGDP<-gdp$GDP[2:275]
+ts.gdp.bf2005<-ts.gdp[1:231,]
+ts.gdp.af2005<-ts.gdp[232:274,]
+sec.model.lm<-lm(newGDP~GDP+Consumption+Investment+Hours,data=ts.gdp.bf2005)
+sec.model.gam<-gam((newGDP)~s(GDP)+s(Consumption)+s(Investment)+s(Hours),data=ts.gdp.bf2005)
+sec.bw<-npregbw(formula=newGDP~GDP+Consumption+Investment+Hours,tol=1e-3,ftol=1e-3,data=ts.gdp.bf2005,residuals=T,verbose=F)
+sec.model.kernel<-npreg(bws=sec.bw,residuals=T)
+lm.cv.sec<-cv.lm(data=ts.gdp.bf2005,formula=c(formula(sec.model.lm)),nfolds=5)
+
+```
+There are two ways for us to calculate the uncertainty of a model, in-sample MSE and cross-validated MSE. First let's calculate the in-sample MSE.Linear model gives MSE of $`r signif(mse(sec.model.lm),digits = 3)`$, general additive model gives MSE of $`r signif(mse(sec.model.gam),digits = 3)`$ while kernel regression model gives MSE of $`r signif(sec.model.kernel$MSE,digits = 3)`$. Then, we will check the cv MSE for each model. Linear model gives MSE of $`r signif(lm.cv.sec,digits = 3)`$, general additive model gives MSE of $`r signif(sec.model.gam$gcv.ubre,digits = 3)`$ while kernel regression model gives MSE of $`r signif(sec.bw$fval,digits = 3)`$.
+
+```{R,echo=F}
+par(mfrow=c(2,2))
+plot(ts.gdp.bf2005$GDP~ts.gdp.bf2005$X,xlab="time",ylab="gdp",main="linear model")
+lines(ts.gdp.bf2005$X,predict(sec.model.lm),col='red',lwd=2)
+plot(ts.gdp.bf2005$GDP~ts.gdp.bf2005$X,xlab="time",ylab="gdp",main="GAM model")
+lines(ts.gdp.bf2005$X,predict(sec.model.gam),col='red',lwd=2)
+plot(ts.gdp.bf2005$GDP~ts.gdp.bf2005$X,xlab="time",ylab="gdp",main="kernel model")
+lines(ts.gdp.bf2005$X,predict(sec.model.kernel),col='red',lwd=2)
+par(mfrow=c(1,1))
+```
+
+
+Although kernel has smallest in-sample MSE, its cross validated MSE is significantly larger than both GAM and linear model. Furthermore, the GAM model has smaller in-sample and cross-validated MSE than linear model. Thus, we will use GAM for this particular model.
+
+We will run a partial response for GAM here, which is visualized down here. All of the variables are linear without curvature. That is to say, next year's gdp($gdp_{t}$) grows linearly with last year's GDP($GDP_{t}$), consumption($Consumption_{t}$), investment($Investment_{t}$) and productivity($Productivity_t$). 
+
+```{R,echo=F}
+plot(sec.model.gam,page=1,residuals=T,shade=T)
+```
+
+
+Then, we will try to fit the data to our GAM to see how well GAM predicts.
+
+```{R,echo=F}
+sec.predction<-predict(sec.model.gam,newdata=ts.gdp.af2005)
+sec.pred.mse<-mean((sec.predction-ts.gdp.af2005$GDP)^2)
+```
+
+As we can see, the prediction's in-sample mse is $`r signif(sec.pred.mse,digits=3)`$, which is a little bit smaller the in-sample mse for the training data. Let's also visualize this on graph. As we can see from the graph, it has pretty good performance for predicting the data after 2005, and it looks like a much better fit than the one in previous section.
+
+```{R,echo=F}
+ts.gdp.af2005$X<-factor(gdp.af2005$X)
+plot(ts.gdp.af2005$GDP~ts.gdp.af2005$X,xlab="time",ylab="gdp",main="Prediction Performance")
+lines(ts.gdp.af2005$X,sec.predction,col='red',lwd=2)
+```
+
+
+###2.3
+```{R,echo=F,cache=T,message=F,results='hide'}
+trd.model.lm<-lm(newGDP~GDP+Consumption+Investment+Hours+Productivity,data=ts.gdp.bf2005)
+trd.model.gam<-gam((newGDP)~s(GDP)+s(Consumption)+s(Investment)+s(Hours)+s(Productivity),data=ts.gdp.bf2005)
+trd.bw<-npregbw(formula=newGDP~GDP+Consumption+Investment+Hours+Productivity,tol=1e-3,ftol=1e-3,data=ts.gdp.bf2005,residuals=T,verbose=F)
+trd.model.kernel<-npreg(bws=sec.bw,residuals=T)
+lm.cv.trd<-cv.lm(data=ts.gdp.bf2005,formula=c(formula(sec.model.lm)),nfolds=5)
+```
+There are two ways for us to calculate the uncertainty of a model, in-sample MSE and cross-validated MSE. First let's calculate the in-sample MSE.Linear model gives MSE of $`r signif(mse(trd.model.lm),digits = 3)`$, general additive model gives MSE of $`r signif(mse(trd.model.gam),digits = 3)`$ while kernel regression model gives MSE of $`r signif(trd.model.kernel$MSE,digits = 3)`$. Then, we will check the cv MSE for each model. Linear model gives MSE of $`r signif(lm.cv.trd,digits = 3)`$, general additive model gives MSE of $`r signif(trd.model.gam$gcv.ubre,digits = 3)`$ while kernel regression model gives MSE of $`r signif(trd.bw$fval,digits = 3)`$.
+
+```{R,echo=F}
+par(mfrow=c(2,2))
+plot(ts.gdp.bf2005$GDP~ts.gdp.bf2005$X,xlab="time",ylab="gdp",main="linear model")
+lines(ts.gdp.bf2005$X,predict(trd.model.lm),col='red',lwd=2)
+plot(ts.gdp.bf2005$GDP~ts.gdp.bf2005$X,xlab="time",ylab="gdp",main="GAM model")
+lines(ts.gdp.bf2005$X,predict(trd.model.gam),col='red',lwd=2)
+plot(ts.gdp.bf2005$GDP~ts.gdp.bf2005$X,xlab="time",ylab="gdp",main="kernel model")
+lines(ts.gdp.bf2005$X,predict(trd.model.kernel),col='red',lwd=2)
+par(mfrow=c(1,1))
+```
+
+
+Kernel regression have smallest in-sample MSE and cross validated MSE. Thus, we will choose kernel regression for this particular model.
+
+Then, we will try to fit the data to our kernel model to see how well it predicts.
+
+```{R,echo=F}
+trd.predction<-predict(trd.model.kernel,newdata=ts.gdp.af2005)
+trd.pred.mse<-mean((trd.predction-ts.gdp.af2005$GDP)^2)
+```
+
+As we can see, the prediction's in-sample mse is $`r signif(trd.pred.mse,digits=3)`$, which is a little bit larger the in-sample mse for the training data. Let's also visualize this on graph. As we can see from the graph, it has pretty good performance for predicting the data after 2005(good fit).
+
+```{R,echo=F}
+ts.gdp.af2005$X<-factor(gdp.af2005$X)
+plot(ts.gdp.af2005$GDP~ts.gdp.af2005$X,xlab="time",ylab="gdp",main="Prediction Performance")
+lines(ts.gdp.af2005$X,sec.predction,col='red',lwd=2)
+```
+
+It suggests that productivity may be an important factor for driving GDP.
+
+
+
+###2.4
+
+```{R,echo=F}
+ts.gdp$newConsumption<-gdp$Consumption[2:275]
+ts.gdp$newInvestment<-gdp$Investment[2:275]
+ts.gdp$newHours<-gdp$Hours[2:275]
+ts.gam.gdp<-gam((newGDP)~s(GDP)+s(Consumption)+s(Investment)+s(Hours)+s(Productivity),data=ts.gdp)
+ts.gam.consumption<-gam((newConsumption)~s(GDP)+s(Consumption)+s(Investment)+s(Hours)+s(Productivity),data=ts.gdp)
+ts.gam.investment<-gam((newInvestment)~s(GDP)+s(Consumption)+s(Investment)+s(Hours)+s(Productivity),data=ts.gdp)
+ts.gam.hours<-gam((newHours)~s(GDP)+s(Consumption)+s(Investment)+s(Hours)+s(Productivity),data=ts.gdp)
+```
+
+As we draw each model's partial response to productivity, we can see all of the plots look really similar, where the productivity shows a little curvature but around 0.
+
+
+###2.5
+```{R,echo=F}
+par(mfrow=c(1,2))
+prod.ts.matrix<-design.matrix.from.ts(gdp$Productivity,1)
+plot(lag0 ~ lag1, data = prod.ts.matrix, xlab = expression(Productivity[t]),ylab = expression(Productivity[t + 1]))
+abline(lm(lag0~lag1,data=prod.ts.matrix),col="red")
+Prod.aar<-aar(gdp$Productivity,1)
+points(gdp$Productivity[-length(gdp$Productivity)], fitted(Prod.aar), col = "blue")
+plot(prod.ts.matrix$lag1,residuals(lm(lag0~lag1,data=prod.ts.matrix)),xlab="lag1",ylab="residuals",main="Residuals plot")
+abline(h=0,col="red",lwd=2)
+par(mfrow=c(1,1))
+```
+After running the autoregressive process, it shows that the process is a linear first-order autoregressive model with Gaussian noise.
+
+###2.6
+```{R,echo=F,results="hide",cache=T}
+ts.gdp$newProductivity<-gdp$Productivity[2:275]
+ts.gam.prod<-gam((newProductivity)~s(GDP)+s(Consumption)+s(Investment)+s(Hours)+s(Productivity),data=ts.gdp)
+ts.lm.prod<-lm(newProductivity~GDP+Consumption+Investment+Hours+Productivity,data=ts.gdp)
+ts.bw.prod<-npregbw(formula=newProductivity~GDP+Consumption+Investment+Hours+Productivity,tol=1e-3,ftol=1e-3,data=ts.gdp,residuals=T,verbose=F)
+ts.kernel.prod<-npreg(ts.bw.prod,residuals=T)
+```
+
+```{R,echo=F}
+lm.cv.prod<-cv.lm(data=ts.gdp,formula=c(formula(ts.lm.prod)),nfolds=5)
+
+```
+There are two ways for us to calculate the uncertainty of a model, in-sample MSE and cross-validated MSE. First let's calculate the in-sample MSE.Linear model gives MSE of $`r signif(mse(ts.lm.prod),digits = 3)`$, general additive model gives MSE of $`r signif(mse(ts.gam.prod),digits = 3)`$ while kernel regression model gives MSE of $`r signif(ts.kernel.prod$MSE,digits = 3)`$. Then, we will check the cv MSE for each model. Linear model gives MSE of $`r signif(lm.cv.prod,digits = 3)`$, general additive model gives MSE of $`r signif(ts.gam.prod$gcv.ubre,digits = 3)`$ while kernel regression model gives MSE of $`r signif(ts.bw.prod$fval,digits = 3)`$. 
+
+We can see kernel regression gives both smaller in-sample MSE and cross-validated MSE. However, here we are more interested in determining the relationship between productivity and other variables, we would prefe gam so we can run the partial response to understand the relationship better.
+
+Now, we will check the partial difference for the gam we constructed. Everything seem to be linear with productivity except last year's productivity, where there is a minor curvature.
+
+```{R,echo=F}
+plot(ts.gam.prod,page=1,shade=T,se=2)
+```
+
+Then, we can check how well this model performs. Similarly, we will find the mse by bootstrapping the whole data frame.
+```{R,echo=FALSE,cache=TRUE}
+rboot <- function(statistic, simulator, B) {
+  tboots <- replicate(B, statistic(simulator()))
+  if(is.null(dim(tboots))) {
+      tboots <- array(tboots, dim=c(1, B))
+  }
+  return(tboots)
+}
+
+bootstrap <- function(tboots, summarizer, ...) {
+  summaries <- apply(tboots, 1, summarizer, ...)
+  return(t(summaries))
+}
+
+equitails <- function(x, alpha) {
+  lower <- quantile(x, alpha/2)
+  upper <- quantile(x, 1-alpha/2)
+  return(c(lower, upper))
+  
+  
+}
+
+resample <- function(x) { sample(x,size=length(x),replace=TRUE) }
+
+resample.data.frame <- function(data) {
+  # Resample the row indices
+  sample.rows <- resample(1:nrow(data))
+  # Return a new data frame with those rows in that order
+  return(data[sample.rows,])
+}
+```
+
+```{R,echo=F,cache=T}
+est.prod<-function(data){ fit<-(gam((newProductivity)~s(GDP)+s(Consumption)+s(Investment)+s(Hours)+s(Productivity),data=data))
+return (mse(fit))}
+resample.prod<-function(){resample.data.frame(ts.gdp)}
+bootstrap.mse<-function(){
+  prod.rboots<-rboot(statistic=est.prod,simulator=resample.prod,B=1e2)
+  return (bootstrap(prod.rboots,summarizer=sd))}
+mse.prod<-bootstrap.mse()
+mse.lag<-mse(lm(lag0~lag1,data=prod.ts.matrix))
+```
+
+After bootstrapping, we found out that the mse for the gam model is $signif(mse.prod,digits=3)$ and the mse for the autoregressive model is $signif(mse.lag,digits=3)$. Thus, we can see the gam model is better. This implies that the productivity is not exogenous. If the productivity is exogenous, the autoregressive model should act better than the gam model. However, this is not the case here.
+
+###2.7 Conclusion and Suggestions
+There are definitely some evidence that productivity is a little bit different from other factors to predict GDP (bandwidth in kernel regression and the partial responses). However, I don't think we are able to use analytic tool to evaluate the statement. People's productivity is a state depending on various factors and thus extremely hard to quantify. The theory is sound, but we need better analatic method to measure it.
+As for the future suggestions for the data analysis, I think we need to first have more detailed and broad way of describing productivity. Secondly, I think we should invest more time on testing if it is exogenous, and if so, which varibles are productivity not depending on completely. 
