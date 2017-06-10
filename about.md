@@ -10,7 +10,7 @@ Muchen is expected to graduate by May 2017 and now actively looking for full tim
 </p>
 
 <p>
-Outside the school, I like to do film photography and play Overwatch.
+Outside the school, I like to do  <li><a href="https://www.flickr.com/photos/muchen_nb/">film photography</a></li> and play Overwatch.
 </p>
 
 
@@ -40,5 +40,5 @@ Outside the school, I like to do film photography and play Overwatch.
 
 <h2>Sample Analysis Work</h2>
 <ul>
-	<li><a href="van950105.github.io/assets/works/final.pdf">Productivity Analysis  </a><a href="van950105.github.io/assets/works/final.Rmd">(.Rmd)</a> </li>
+	<li><a href="https://van950105.github.io/assets/works/final.pdf">Productivity Analysis  </a><a href="https://van950105.github.io/assets/works/final.Rmd">(.Rmd)</a> </li>
 </ul>
