@@ -40,5 +40,6 @@ Outside the school, I like to do  <a href="https://www.flickr.com/photos/muchen_
 
 <h2>Sample Analysis Work</h2>
 <ul>
+	<li><a href="https://van950105.github.io/assets/works/white_paper.pdf"> Sample White Paper </a></li>
 	<li><a href="https://van950105.github.io/assets/works/final.pdf">Productivity Analysis  </a><a href="https://van950105.github.io/assets/works/final.Rmd">(.Rmd)</a> </li>
 </ul>
