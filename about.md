@@ -5,12 +5,13 @@ layout: page
 ![Profile Image]({{ site.url }}/{{ site.picture }})
 
 <p>
-Muchen is an undergraduate student at Carnegie Mellon University with major of Mathematical Science and Statistics and minor of Machine Learning .He has great academic and industrial experience in data analysis, statistical modeling and machine learning. He is also proficient in using various programming languages and software, such like python(numPy, pandas, scikit, etc), R, C, Matlab and SQL.
-Muchen is expected to graduate by May 2017 and now actively looking for full time job as data scientist or (quantitative) data analyst.
+Muchen currently works in Younow, inc as a Data Analyst.
+He graduated from Carnegie Mellon University with major of Mathematical Science and Statistics and minor of Machine Learning in May 2017. He has great academic and industrial experience in data analysis, statistical modeling and machine learning. He is also proficient in using various programming languages and software, such like python(numPy, pandas, scikit, etc), R, C, Matlab and SQL.
+If you are interested in having a conversation with me, shoot me an email.
 </p>
 
 <p>
-Outside the school, I like to do  <a href="https://www.flickr.com/photos/muchen_nb/">film photography</a> and play Overwatch<a href="https://www.overbuff.com/players/xbl/muchenz?mode=competitive">(Find me on Overbuff!)</a>.
+Outside the school, I like to do  <a href="https://www.flickr.com/photos/muchen_nb/">film</a>(sometimes <a href='https://www.instagram.com/ryan_nb/'>digital and phone</a>) photography and play Overwatch<a href="https://www.overbuff.com/players/xbl/muchenz?mode=competitive">(Find me on Overbuff!)</a>.
 </p>
 
 
